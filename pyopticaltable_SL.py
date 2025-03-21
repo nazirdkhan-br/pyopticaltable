@@ -22,7 +22,7 @@ allowed_types = ('mirror', 'concave_lens', 'convex_lens',
                  'transmissive_plate', 'transmissive_cube',
                  'beamsplitter_cube', 'generic_box',
                  'box_source', 'point_source',
-                 'beam_dump', 'generic_circle',
+                 'beam_block', 'generic_circle',
                  'concave_mirror', 'triangular_prism',
                  'beamsplitter_line','sample',
                  'supercontinuum_generator','chopper',
@@ -55,9 +55,9 @@ class Tools:
         """Convert degrees to radians."""
         return x * (np.pi/180)
 
-    def rotate_point(point, angle, origin=(0,0)):
+    def rotate_point(point, angle, origin):
         """
-        Rotate a point by an angle theta around the origin.
+        Rotate a point by an angle theta around another point, origin.
         
         Used for rotating optics around their centre. Uses a simple 2D rotation
         matrix (written out in longhand).
@@ -100,12 +100,12 @@ class Tools:
         """
         Return the midpoint of a line.
         
-        Line is loaded as a tuple of points ( (x1, y1), (x2, y2) )
+        Line is loaded as a tuple of endpoints ( (x1, y1), (x2, y2) )
         
         Parameters
         ----------
             line : tuple
-                Contains two points (as tuples (x,y)) that define the line.
+                Contains two endpoints (as tuples (x,y)) that define the line.
         
         Returns
         ----------
@@ -204,6 +204,7 @@ class OpticalElement:
         self.y = y
         self.mode = mode
         self.angle = angle
+        self.element_type = element_type
 
 
 class OpticalTable:
@@ -298,7 +299,7 @@ class OpticalTable:
         self.aspect_ratio = length/width
 
     def angled_line(self, x, y, size, angle, colour='k', show=True, 
-                    get_coords=False):
+                    get_coords=False, thickness = 1):
         """
         Generate a line centered at (x, y) of length size, rotated by an angle
         angle (in degrees).
@@ -342,7 +343,7 @@ class OpticalTable:
         dX = (size/2) * Tools.cosd(angle) * self.aspect_ratio
         dY = (size/2) * Tools.sind(angle) * self.aspect_ratio
         if show:
-            self.ax.plot([x-dX, x+dX], [y-dY, y+dY], color=colour)
+            self.ax.plot([x-dX, x+dX], [y-dY, y+dY], color=colour, linewidth = thickness)
         if get_coords:
             return x-dX, x+dX, y-dY, y+dY
 
@@ -1178,8 +1179,148 @@ class OpticalTable:
                        labelpad, textcolour, fontsize=fontsize)
         return OpticalElement(x, y, 't', angle, 'beamsplitter_line')
 
+    def sg(self, x, y, size, angle, colour='w',
+               label=None, label_pos='bottom', labelpad=0.25, textcolour='k',
+               fontsize=fontparams['fontsize']):
+        """
+        Draw a supercontinnum generator on the optical table.
+        
+        A supercontinuum generator is simply an angled line. 
+        Lasers will change to white light (coded in the draw stage), at the point (x,y).
 
+        Parameters
+        ----------
+        x : float
+            x-coordinate of the centre of the optic.
+        y : float
+            y-coordinate of the centre of the optic.
+        size : float
+            Size of the optic.
+        angle : float
+            Rotation of the optic anticlockwise from the positive x-axis, in degrees.
+        colour : string, optional
+            Colour of the optic, any matplotlib supported colour works. The default is 'w'.
+        label : string, optional
+            Text to put in the label for the optic. The default is None (no label).
+        label_pos : string, optional
+            Position of the label relative to the optic ('top', 'bottom', 'left', 'right'). The default is "bottom".
+        labelpad : float, optional
+            Additional padding to add between the label and the optic. The default is 0.25.
+        textcolour : string, optional
+            Colour of the label text. The default is 'k' (black).
+        fontsize : float, optional
+            Font size for the label text. The default is fontparams['fontsize'].
 
+        Returns
+        -------
+        OpticalElement
+            Instance of the OpticalElement class for this optic.
+
+        """
+        self.angled_line(x, y, size, angle, colour=colour)
+        self.set_label(self.ax, x, y, size, label, label_pos,
+                       labelpad, textcolour, fontsize=fontsize)
+        return OpticalElement(x, y, 't', angle, 'supercontinuum_generator')
+
+    def beam_block(self, x, y, size, angle, colour='k',
+               label=None, label_pos='bottom', labelpad=0.25, textcolour='k',
+               fontsize=fontparams['fontsize']):
+        """
+        Draw a delay stage on the optical table.
+        
+        A delay stage is a set of 4  is simply an angled line. 
+        Lasers will change to white light (coded in the draw stage), at the point (x,y).
+
+        Parameters
+        ----------
+        x : float
+            x-coordinate of the centre of the optic.
+        y : float
+            y-coordinate of the centre of the optic.
+        size : float
+            Size of the optic.
+        angle : float
+            Rotation of the optic anticlockwise from the positive x-axis, in degrees.
+        colour : string, optional
+            Colour of the optic, any matplotlib supported colour works. The default is 'w'.
+        label : string, optional
+            Text to put in the label for the optic. The default is None (no label).
+        label_pos : string, optional
+            Position of the label relative to the optic ('top', 'bottom', 'left', 'right'). The default is "bottom".
+        labelpad : float, optional
+            Additional padding to add between the label and the optic. The default is 0.25.
+        textcolour : string, optional
+            Colour of the label text. The default is 'k' (black).
+        fontsize : float, optional
+            Font size for the label text. The default is fontparams['fontsize'].
+
+        Returns
+        -------
+        OpticalElement
+            Instance of the OpticalElement class for this optic.
+
+        """
+        self.angled_line(x, y, size, angle, colour=colour, thickness = 3)
+        self.set_label(self.ax, x, y, size, label, label_pos,
+                       labelpad, textcolour, fontsize=fontsize)
+        return OpticalElement(x, y, 'a', angle, 'beam_block')
+    
+    def delay_stage(self, x, y, size, angle, colour='k',
+               label=None, label_pos='bottom', labelpad=0.25, textcolour='k',
+               fontsize=fontparams['fontsize']):
+        """
+        Draw a delay stage on the optical table.
+        
+        A delay stage is a set of 4  is simply an angled line. 
+        Lasers will change to white light (coded in the draw stage), at the point (x,y).
+
+        Parameters
+        ----------
+        x : float
+            x-coordinate of the centre of the optic.
+        y : float
+            y-coordinate of the centre of the optic.
+        size : float
+            Size of the optic.
+        angle : float
+            Rotation of the optic anticlockwise from the positive x-axis, in degrees.
+        colour : string, optional
+            Colour of the optic, any matplotlib supported colour works. The default is 'w'.
+        label : string, optional
+            Text to put in the label for the optic. The default is None (no label).
+        label_pos : string, optional
+            Position of the label relative to the optic ('top', 'bottom', 'left', 'right'). The default is "bottom".
+        labelpad : float, optional
+            Additional padding to add between the label and the optic. The default is 0.25.
+        textcolour : string, optional
+            Colour of the label text. The default is 'k' (black).
+        fontsize : float, optional
+            Font size for the label text. The default is fontparams['fontsize'].
+
+        Returns
+        -------
+        OpticalElement
+            Instance of the OpticalElement class for this optic.
+
+        """
+        self.angled_line(x, y, size, angle, colour=colour)
+        self.set_label(self.ax, x, y, size, label, label_pos,
+                       labelpad, textcolour, fontsize=fontsize)
+        return OpticalElement(x, y, 't', angle, 'supercontinuum_generator')
+"""
+    def chopper(self, x, y, size, colour='k', fill=False, fillcolour='k',
+                       label=None, label_pos='top', labelpad=0.25, textcolour='k', fontsize=fontparams['fontsize']):
+
+        theta = np.linspace(np.radians(0), np.radians(90), 100)
+        quadrant_one = x + size * np.sind
+        circle = mpl.patches.Circle(
+            (x, y), radius=size, edgecolor=colour, fill=fill, facecolor=None)
+        self.set_label(self.ax, x, y, size, label, label_pos,
+                       labelpad, textcolour, fontsize=fontsize)
+        self.ax.add_patch(circle)
+        return OpticalElement(x, y, 't', None, 'chopper')
+
+"""
 
 class LaserBeam:
     """
@@ -1229,6 +1370,8 @@ class LaserBeam:
         
         Beam parameters (colour, linewidth, linestyle) are controlled when the 
         LaserBeam class is initialised.
+        
+        Beam parameters can change depending on the optic being passed through.
 
         Parameters
         ----------
@@ -1247,6 +1390,12 @@ class LaserBeam:
             pass  # do this later
         else:
             for i, _ in enumerate(optics[0:-1]):
+                if optics[i].element_type == 'supercontinuum_generator':
+                    self.colour = 'white'
+                if optics[i].element_type == 'OPA':
+                    self.colour = 'blue'
+                if optics[i].element_type == 'chopper':
+                    self.style = (0,(5,5))
                 table.ax.plot([optics[i].x, optics[i+1].x], [optics[i].y, optics[i+1].y],
                               color=self.colour,
                               linewidth=self.width,

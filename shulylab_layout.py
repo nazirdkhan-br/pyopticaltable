@@ -48,8 +48,17 @@ ir_path.append(ir_M5)
 ir_M6 = table.mirror(10,-9,mirror_size_small,-45,label = "M6")
 ir_path.append(ir_M6)
 
-ir_PaM1 = table.concave_mirror(8, -9, mirror_size_small, 45, label = "PaM1")
+ir_PaM1 = table.concave_mirror(8, -9, mirror_size_small, 45, label = "PaM1", lens_factor = 2)
 ir_path.append(ir_PaM1)
+
+ir_sg = table.sg(8, -11, mirror_size_small, 0, label = "SG")
+ir_path.append(ir_sg)
+
+ir_PaM2 = table.concave_mirror(8, -13, mirror_size_small, 135, label = "PaM2", lens_factor = 2)
+ir_path.append(ir_PaM2)
+
+ir_BB = table.beam_block(3,-13,mirror_size_small,90,label = "BB")
+ir_path.append(ir_BB)
 
 ir_beam.draw(table, ir_path)
 
@@ -160,4 +169,4 @@ irbeam_overlapped.draw(table, irbeam_overlappedpath)
 sfbeam.draw(table, sfpath)
 """
 
-plt.show()
+#plt.show()
